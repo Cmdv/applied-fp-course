@@ -43,9 +43,22 @@ unitTests = do
       -- Don't worry if you don't get all of these done. :)
 
       -- 1) The '<topic>/add' route will respond with an error when given an empty comment
-      -- 2) The '<topic>/view' route will respond correctly when given a topic
-      -- 3) The '<topic>/view' route will respond with an error when given an empty topic
-      -- 4) A gibberish route will return a 404
+      describe "Add Route" $ do
+        it "Should return a 400 status when given an empty comment" $
+          post "/foobar/add" "" `shouldRespondWith` "Empty Comment" { matchStatus = 400 }
 
+      -- 2) The '<topic>/view' route will respond correctly when given a topic
+      describe "View Route" $ do
+        it "Should return a 200 with the message 'View Request not implemented' when given an empty comment" $
+          get "/foobar/view" `shouldRespondWith` "View Request not implemented"
+
+      -- 3) The '<topic>/view' route will respond with an error when given an empty topic
+        it "Should return a 400 with the message 'Empty Topic' when given an empty topic" $
+          get "//view" `shouldRespondWith` "Empty Topic" { matchStatus = 400 }
+
+      -- 4) A gibberish route will return a 404
+      describe "Gibberish Route" $ do
+        it "Should return a 404 when given an incorrect route" $
+          get "/gibbergabba" `shouldRespondWith` "Unknown Route" { matchStatus = 404}
 -- After you're done here, you'll need to uncomment the use of these functions
 -- in the `test/Test.hs` otherwise the tests won't run!

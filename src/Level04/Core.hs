@@ -63,8 +63,7 @@ runApp = do
 -- Our application configuration is defined in Conf.hs
 --
 prepareAppReqs :: IO ( Either StartUpError DB.FirstAppDB )
-prepareAppReqs =
-  do
+prepareAppReqs = do
     let c = firstAppConfig
     first DBInitErr <$> DB.initDB (dbFilePath c)
 

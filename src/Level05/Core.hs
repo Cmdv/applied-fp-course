@@ -6,34 +6,35 @@ module Level05.Core
   , prepareAppReqs
   ) where
 
-import           Control.Monad.IO.Class             (liftIO)
+import           Control.Monad.IO.Class (liftIO)
 
 import           Network.Wai                        (Application, Request,
                                                      Response, pathInfo,
                                                      requestMethod, responseLBS,
                                                      strictRequestBody)
-import           Network.Wai.Handler.Warp           (run)
+import           Network.Wai.Handler.Warp (run)
 
 import           Network.HTTP.Types                 (Status, hContentType,
                                                      status200, status400,
                                                      status404, status500)
 
-import qualified Data.ByteString.Lazy               as LBS
+import qualified Data.ByteString.Lazy as LBS
 
-import           Data.Either                        (either)
-import           Data.Monoid                        ((<>))
+import           Data.Bifunctor (first)
+import           Data.Either (either)
+import           Data.Monoid ((<>))
 
-import           Data.Text                          (Text)
-import           Data.Text.Encoding                 (decodeUtf8)
+import           Data.Text (Text)
+import           Data.Text.Encoding (decodeUtf8)
 
 import           Database.SQLite.SimpleErrors.Types (SQLiteResponse)
 
-import           Data.Aeson                         (ToJSON)
-import qualified Data.Aeson                         as A
+import           Data.Aeson (ToJSON)
+import qualified Data.Aeson as A
 
-import           Level05.AppM                       (AppM, liftEither, runAppM)
-import qualified Level05.Conf                       as Conf
-import qualified Level05.DB                         as DB
+import           Level05.AppM (AppM, liftEither, runAppM)
+import qualified Level05.Conf as Conf
+import qualified Level05.DB as DB
 import           Level05.Types                      (ContentType (..),
                                                      Error (..),
                                                      RqType (AddRq, ListRq, ViewRq),
@@ -47,14 +48,15 @@ data StartUpError
   = DBInitErr SQLiteResponse
   deriving Show
 
+
 runApp :: IO ()
 runApp = do
   -- Load our configuration
   cfgE <- prepareAppReqs
   -- Loading the configuration can fail, so we have to take that into account now.
   case cfgE of
-    Left err   -> undefined
-    Right _cfg -> run undefined undefined
+    Left err -> putStrLn $ "Error loading config" <> show err
+    Right db -> run 3000 (app db)
 
 -- We need to complete the following steps to prepare our app requirements:
 --
@@ -65,8 +67,9 @@ runApp = do
 --
 prepareAppReqs
   :: IO ( Either StartUpError DB.FirstAppDB )
-prepareAppReqs =
-  error "copy your prepareAppReqs from the previous level."
+prepareAppReqs =  do
+    let c = Conf.firstAppConfig
+    first DBInitErr <$> DB.initDB (Conf.dbFilePath c)
 
 -- | Some helper functions to make our lives a little more DRY.
 mkResponse
@@ -115,11 +118,12 @@ resp200Json =
 
 -- How has this implementation changed, now that we have an AppM to handle the
 -- errors for our application? Could it be simplified? Can it be changed at all?
-app
-  :: DB.FirstAppDB
+app :: DB.FirstAppDB
   -> Application
-app db rq cb =
-  error "app not reimplemented"
+app db rq cb = runAppM (handleRequest db =<< mkRequest rq) >>= cb . handleRespErr
+  where
+    handleRespErr :: Either Error Response -> Response
+    handleRespErr = either mkErrorResponse id
 
 handleRequest
   :: DB.FirstAppDB

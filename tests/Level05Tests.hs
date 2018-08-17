@@ -6,20 +6,20 @@ module Level05Tests
 
 import           Control.Monad.Reader (ask, reader)
 
-import           Data.Monoid          ((<>))
+import           Data.Monoid ((<>))
 
-import           Data.String          (IsString)
+import           Data.String (IsString)
 
 import           Test.Hspec
 import           Test.Hspec.Wai
 
-import qualified System.Exit          as Exit
+import qualified System.Exit as Exit
 
-import qualified Level05.AppM         as AppM
+import qualified Level05.AppM as AppM
 
-import qualified Level05.Core         as Core
-import qualified Level05.DB           as DB
-import qualified Level05.Types        as Types
+import qualified Level05.Core as Core
+import qualified Level05.DB as DB
+import qualified Level05.Types as Types
 
 doctests :: [FilePath]
 doctests =

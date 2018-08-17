@@ -8,6 +8,7 @@ import Data.Text (Text)
 
 data Error
   = UnknownRoute
+  | DBError
   | EmptyCommentText
   | EmptyTopic
   -- Add another constructor for our DB error types.

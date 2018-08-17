@@ -16,21 +16,22 @@ module Level04.Types
   , fromDBComment
   ) where
 
-import           GHC.Generics              (Generic)
+import           GHC.Generics (Generic)
 
-import           Data.ByteString           (ByteString)
-import           Data.Text                 (Text)
+import           Data.ByteString (ByteString)
+import           Data.Text (Text)
 
-import           Data.List                 (stripPrefix)
-import           Data.Maybe                (fromMaybe)
+import           Data.Char
+import           Data.List (stripPrefix)
+import           Data.Maybe (fromMaybe)
 
-import           Data.Aeson                (ToJSON (toJSON))
-import qualified Data.Aeson                as A
-import qualified Data.Aeson.Types          as A
+import           Data.Aeson (ToJSON (toJSON))
+import qualified Data.Aeson as A
+import qualified Data.Aeson.Types as A
 
-import           Data.Time                 (UTCTime)
+import           Data.Time (UTCTime)
 
-import           Level04.DB.Types          (DBComment)
+import           Level04.DB.Types (DBComment(..))
 
 -- Notice how we've moved these types into their own modules. It's cheap and
 -- easy to add modules to carve out components in a Haskell application. So
@@ -38,8 +39,8 @@ import           Level04.DB.Types          (DBComment)
 -- distinct functionality, or you want to carve out a particular piece of code,
 -- just spin up another module.
 import           Level04.Types.CommentText (CommentText, getCommentText, mkCommentText)
-import           Level04.Types.Error       (Error (EmptyCommentText, EmptyTopic, UnknownRoute))
-import           Level04.Types.Topic       (Topic, getTopic, mkTopic)
+import           Level04.Types.Error (Error (EmptyCommentText, EmptyTopic, UnknownRoute, DBError))
+import           Level04.Types.Topic (Topic, getTopic, mkTopic)
 
 
 -- This is the `Comment` record that we will be sending to users, it's a simple
@@ -68,11 +69,8 @@ data Comment = Comment
 -- "topic"
 -- >>> modFieldLabel ""
 -- ""
-modFieldLabel
-  :: String
-  -> String
-modFieldLabel =
-  error "modFieldLabel not implemented"
+modFieldLabel :: String -> String
+modFieldLabel l = toLower <$> fromMaybe l (stripPrefix "comment" l)
 
 instance ToJSON Comment where
   -- This is one place where we can take advantage of our `Generic` instance.
@@ -94,11 +92,12 @@ instance ToJSON Comment where
 -- that we would be okay with showing someone. However unlikely it may be, this
 -- is a nice method for separating out the back and front end of a web app and
 -- providing greater guarantees about data cleanliness.
-fromDBComment
-  :: DBComment
-  -> Either Error Comment
-fromDBComment =
-  error "fromDBComment not yet implemented"
+fromDBComment :: DBComment -> Either Error Comment
+fromDBComment dbc =
+  Comment (CommentId    $ dbCommentId dbc)
+      <$> mkTopic       (dbCommentTopic dbc)
+      <*> mkCommentText (dbCommentBody dbc)
+      <*> pure          (dbCommentTime dbc)
 
 data RqType
   = AddRq Topic CommentText
@@ -109,8 +108,6 @@ data ContentType
   = PlainText
   | JSON
 
-renderContentType
-  :: ContentType
-  -> ByteString
+renderContentType :: ContentType -> ByteString
 renderContentType PlainText = "text/plain"
 renderContentType JSON      = "application/json"
